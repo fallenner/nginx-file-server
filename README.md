@@ -7,6 +7,7 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
     - Support storage file with custom path.
     - Automatic transcoding audio file to .mp3 file, video file to .mp4 file.
     - Automatic clean upload file when error Occurred.
+    - It can be installed successful in Offline state. 
     
 ### Install
 1. Login with root user;
@@ -16,8 +17,7 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
 
 - Note
 
-    file-server base on nginx, the deafult port is *8090*.   check the nginx whether has been installed  before install file-server. if has been installed, suggest uninstall the old nginx.
-
+    file-server base on nginx, the deafult port is <b>8090</b>.  check the nginx whether has been installed  before install file-server. if has been installed, suggest uninstall the old nginx. the fileServer Only Support in <b>Linux</b>. Only the CentOS 7 can install by execute upload.sh.
 ### Document
 ---
 - FrontEnd
