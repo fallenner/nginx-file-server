@@ -1,7 +1,7 @@
 ## A file Server base on nginx.
 
 ### Describe
-This is a file-server base on nginx-upload-module.
+This is a file-server base on nginx-upload-module、nginx-lua-module、lua、resty-http-module.
 
 - Features:
     - Support storage file with custom path.
@@ -13,6 +13,10 @@ This is a file-server base on nginx-upload-module.
 2. cd nginx-file-server/;
 3. chmod +x upload.sh
 4. ./upload.sh
+
+- Note
+
+    file-server base on nginx, the deafult port is *8090*.   check the nginx whether has been installed  before install file-server. if has been installed, suggest uninstall the old nginx.
 
 ### Document
 ---
@@ -76,4 +80,15 @@ This is a file-server base on nginx-upload-module.
           backend handle program will receive these params after fileServer trriger a http request. 
           
           remove API will receive some custom params. 
+          
+    -Note:
+         
+         If the backend handle program execution success, you should return the JSON format result. And the fileServer will judge whether clean（rollback）the upload file or remove file base on the JSON format result.
+         
+         Success: {code:0, msg:'custom by yourself'}
+         
+         Failed: {code:-1, msg:'custom by yourself'}
+         
+         you should catch the Error, And return Failed JSON format result.
+                
            
