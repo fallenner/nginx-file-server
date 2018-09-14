@@ -1,29 +1,21 @@
-cjson = require "cjson";
+cjson = require "cjson.safe";
+http = require "resty.http"
 function onupload()
-	ngx.header['Content-Type'] = 'application/json; charset=utf-8';
-        ngx.header["Access-Control-Allow-Origin"] = ngx.var.http_origin;
-	ngx.req.read_body(); --读取ngx的请求头的body
-	callback = ""; --设置全局后端上传接口路径
-        params = getFormParams_FixBug(ngx.req.get_post_args());  --获取上传的请求参数（上传模块处理后的参数）
-        fileStore = "/opt/uploadStore/"; --文件存储仓库
-    	if (ngx.req.get_headers()["token"] == nil or ngx.req.get_headers()["token"] == "") then
-		os.execute('rm -rf '..params["filePath"]);
-    		return ngx.say(cjson.encode({code=-1,msg="您是非法用户!"}));
-    	end
-	params["fileSuffix"] = getFileSuffix(params["fileName"]);
-    	buildFilePath(params["filePath"]); --拼装文件路径
-    	return convertMedia();  --转换视频格式并转发请求到服务端
+    ngx.header['Content-Type'] = 'application/json; charset=utf-8';
+    ngx.header["Access-Control-Allow-Origin"] = ngx.var.http_origin;
+    ngx.req.read_body(); --读取ngx的请求头的body
+    callback = ""; --设置全局后端上传接口路径
+    userToken = ngx.req.get_headers()["token"];
+    params = getFormParams_FixBug(ngx.req.get_post_args());  --获取上传的请求参数（上传模块处理后的参数）
+    fileStore = "/opt/uploadStore/"; --文件存储仓库
+    if (userToken == nil or userToken == "") then
+	os.execute('rm -rf '..params["filePath"]);
+    	return ngx.say(cjson.encode({code=-1,msg="您是非法用户!"}));
+    end
+    params["fileSuffix"] = getFileSuffix(params["fileName"]);
+    buildFilePath(params["filePath"]); --拼装文件路径
+    return convertMedia();  --转换视频格式并转发请求到服务端
 end 
-
--- 替换文件
---function replaceFile() 
-	--if(os.execute("mv -f "..params["filePath"].." "..fileStore..params["targetFile"]..params["fileSuffix"]) == 0) then
-	--	ngx.header["Access-Control-Allow-Origin"] = ngx.var.http_origin;
-	--	ngx.say(cjson.encode({code=0,result={filePath=params["targetFile"],fileSuffix=params["fileSuffix"]}}));	
-	--else
-	--	ngx.exec("/50x.html");
-	--end
---end
 
 -- 获取上传的文件参数
 function getFormParams_FixBug(formData)
@@ -68,8 +60,7 @@ end
 
 -- 获取文件的后缀名
 function getFileSuffix(fname)  
-    local idx,idx_end = string.find(fname,"%.");  
-    return string.lower(string.sub(fname,idx_end));  
+	return string.lower("."..fname:match(".+%.(%w+)$")) 
 end 
 -- 去除字符串里的空格
 function trim(str)  
@@ -86,12 +77,12 @@ function buildFilePath(oldFilePath)
 	if (params["pathRule"] == nil or params["pathRule"] == "") then
 		params["filePath"] = "other/"..os.date('%Y%m%d') .."/";  --未传入存储路径规则按照默认存储规则
 		if (os.execute("mkdir -p "..fileStore..params["filePath"]) ~= 0) then
-                	return ngx.exec("/50x.html");
-       		end
+            return ngx.exec("/50x.html");
+       	end
 	else
 		if (os.execute("mkdir -p "..fileStore..params["pathRule"]) ~= 0) then
-                       return  ngx.exec("/50x.html");
-                else
+             return  ngx.exec("/50x.html");
+        else
 			params["filePath"] = params["pathRule"];  --按照传入的存储路径来存储文件
 		end
 	end
@@ -101,8 +92,8 @@ function buildFilePath(oldFilePath)
 		params["fileName"] = ngx.md5(math.random(tostring(ngx.time()):reverse():sub(1, 6)));  --未传入文件名参数，则md5随机生成文件名
 	else
 		local i,j = string.find(params["destFileName"],"%.");
-                params["fileSuffix"] = string.sub(params["destFileName"],j);   -- 存储传入的文件的后缀名
-                params["fileName"] = string.sub(params["destFileName"],0,j-1);   -- 存储传入的文件名
+        params["fileSuffix"] = string.sub(params["destFileName"],j);   -- 存储传入的文件的后缀名
+        params["fileName"] = string.sub(params["destFileName"],0,j-1);   -- 存储传入的文件名
 	end
 	
 	if (os.execute("mv -f "..oldFilePath.." "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"]) ~= 0) then
@@ -112,44 +103,70 @@ end
 
 -- 转换视频格式
 function convertMedia() 
-	if(string.find(".mov.flv.avi",params["fileSuffix"]) ~= nil) then
-		local sh_ffmpeg = "ffmpeg -i "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"].." -y -acodec copy -vcodec copy -preset ultrafast -threads 2 "..fileStore..params["filePath"]..params["fileName"]..".mp4";
-		local sh_ffmpeg1 = "ffmpeg -i "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"].." -y -c:v libx264  -preset ultrafast -threads 2 "..fileStore..params["filePath"]..params["fileName"]..".mp4";
-		local sh_rmOldFile = "rm -rf "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"];
-		if (os.execute(sh_ffmpeg) == 0 or os.execute(sh_ffmpeg1) == 0) then
-			if (os.execute(sh_rmOldFile) == 0) then --删除转换格式前的文件
-				params["fileSuffix"] = ".mp4";
-				handleCallBack();
-			else 
-				os.execute(sh_rmOldFile);
-				return ngx.exec("/50x.html");
-			end
-		else
-			os.execute(sh_rmOldFile);
-			return ngx.exec("/50x.html");
-		end
+	--判断是否为视频文件
+	if(string.find(".mov.flv.avi.3gp.mp4",params["fileSuffix"]) ~= nil) then
+		local sh_ffmpeg = "ffmpeg -i "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"].." -y -acodec copy -vcodec copy -preset ultrafast -threads 2 "..fileStore..params["filePath"]..params["fileName"].."_format.mp4";
+		local sh_ffmpeg1 = "ffmpeg -i "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"].." -y -c:v libx264  -preset ultrafast -threads 2 "..fileStore..params["filePath"]..params["fileName"].."_format.mp4";
+	return executeConvertFile(sh_ffmpeg,sh_ffmpeg1,'.mp4');
+	-- 判断是否为音频文件
+	elseif(string.find(".amr",params["fileSuffix"]) ~= nil) then
+		local sh_ffmpeg = "ffmpeg -i "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"].." "..fileStore..params["filePath"]..params["fileName"].."_format.mp3";
+	return executeConvertFile(sh_ffmpeg,sh_ffmpeg,'.mp3');
 	else 
 		return handleCallBack();
 	end					
 end
 
+-- 执行转码命令并删除老文件
+function executeConvertFile(sh_ffmpeg,sh_ffmpeg2,newFileSuffix)
+	local sh_rmOldFile = "rm -rf "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"];
+	params["fileName"]= params["fileName"].."_format"; --若文件为mp3文件的则添加_format，>防止格式>转换输出文件和输入文件名一样导致格式转换失败。
+	if ((os.execute(sh_ffmpeg) == 0 or os.execute(sh_ffmpeg2)) and os.execute(sh_rmOldFile)) then
+             params["fileSuffix"] = newFileSuffix;
+             handleCallBack();
+        else
+             return ngx.say(cjson.encode({code=-1,msg="文件转码失败,文件回滚删除成功，请检>查上传的>文件是否已损坏。"}));                                                                         
+        end
+end
 
 -- 处理后端返回数据
 function handleCallBack()
 	if(callback == "") then 
 		return ngx.say(cjson.encode({code=0,result=params}));
 	else
-		local res =  ngx.location.capture(callback,{method = ngx.HTTP_POST, args = params});  --转发请求
-		if (res.status ~= ngx.HTTP_OK) then
-                	os.execute("rm -rf "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"]);
-                	ngx.say(cjson.encode({code=-1,msg="后端处理程序出错，状态码是"..res.status}));
-        	end
-        	local resultTable = cjson.decode(res.body); --将后端返回的json数据转换成table
-        	if (resultTable["code"] ~= 0) then
-                	os.execute("rm -rf "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"]);
-       		end
-		--return ngx.exec(callback,params);
-		return ngx.say(res.body);
+		if (string.match(callback,"http://") == nil) then
+			 return ngx.say(cjson.encode({code=-1,msg=callback.."不是合法的url"}))
+		end
+		local httpc = http.new();
+		httpc:set_timeout(10000);
+		local res, err = httpc:request_uri(callback, {
+			method = "POST",
+			query = params,
+			headers = {
+			  ["Content-Type"] = "application/x-www-form-urlencoded",
+			  ["Token"] = userToken
+			}
+		  });
+		if (res) then
+			local resultTable = cjson.decode(res.body); --将后端返回的json数据转换成table
+			--ngx.log(ngx.ERR,res.body);	
+			if(resultTable ~= nil and resultTable["code"] == 0) then
+				return ngx.say(res.body);
+			else
+				if (os.execute("rm -rf "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"]) == 0) then
+					return ngx.say(cjson.encode({code=-1,msg="服务端保存文件信息失败,请检查callback参数和服务端请求日志，文件回滚删除成功"}));					
+				else
+					return ngx.say(cjson.encode({code=-1,msg="服务端保存文件信息失败,请检查callback参数和服务端请求日志，文件回滚删除失败"}));
+				end
+			end		
+		else
+			if (os.execute("rm -rf "..fileStore..params["filePath"]..params["fileName"]..params["fileSuffix"]) == 0) then
+                                return ngx.say(cjson.encode({code=-1,msg="服务端请求出错,错误信息为："..err..",文件回滚删除成功"}));
+			else
+                                return ngx.say(cjson.encode({code=-1,msg="服务端请求出错,错误信息为："..err..",文件回滚删除失败"}));
+                        end
+		end		
+		
 	end 
 end
 
