@@ -6,7 +6,7 @@ function onupload()
     ngx.req.read_body() --读取ngx的请求头的body
     callback = "" --设置全局后端上传接口路径
     params, file_tab_arr = getFormParams_FixBug(ngx.req.get_post_args()) --获取上传的请求参数（上传模块处理后的参数）
-    fileStore = "/Users/daizhiqiang/upload_store/" --文件存储仓库
+    fileStore = "/home/uploadStore/" --文件存储仓库
     if (ngx.req.get_headers()["token"] == nil or ngx.req.get_headers()["token"] == "") then
         os.execute("rm -rf " .. params["filePath"])
         return ngx.say(cjson.encode({code = -1, msg = "您是非法用户!"}))
