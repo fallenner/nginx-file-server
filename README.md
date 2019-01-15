@@ -71,6 +71,7 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
     1. upload
         - Params
           backend handle program will receive these params after fileServer trriger a http request.
+          
             | Name       |  Type  |            Describe            |       Example        |
             | ---------- | :----: | :----------------------------: | :------------------: |
             | filePath   | String |  the upload file storage path  |     other/a/b/c/     |
