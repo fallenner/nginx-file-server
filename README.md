@@ -27,6 +27,7 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
 ---
 
 -   FrontEnd
+
     1. upload
 
         - API:
@@ -67,26 +68,25 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
             | -------- | :----: | :------: | :----------------------------------------------------------------------------------------: | :-----------------: |
             | path     | String |   true   |                          the filepath that is needed remove file                           |  other/1/2/3/1.jpg  |
             | callback | String |  false   | Define a backend Handle API path, it will trriger a http request after remove file finish. | http://backend/a/b/ |
+
 -   BackEnd
+
     1. upload
+
         - Params
           backend handle program will receive these params after fileServer trriger a http request.
-          
+
             | Name       |  Type  |            Describe            |       Example        |
             | ---------- | :----: | :----------------------------: | :------------------: |
             | filePath   | String |  the upload file storage path  |     other/a/b/c/     |
             | fileSuffix | String | the upload file extension name |         .png         |
             | fileName   | String |      the upload file name      | asdad123123dsads.png |
-    2. remove
-        - Params
-          backend handle program will receive these params after fileServer trriger a http request.
-            remove API will receive some custom params.
-    -Note:
-      
-     If the backend handle program execution success, you should return the JSON format result. And the fileServer will judge whether clean（rollback）the upload file or remove file base on the JSON format result.
-      
-     Success: {code:0, msg:'custom by yourself'}
-      
-     Failed: {code:-1, msg:'custom by yourself'}
-      
-     you should catch the Error, And return Failed JSON format result.
+
+    2. remove - Params
+       backend handle program will receive these params after fileServer trriger a http request.
+       remove API will receive some custom params.
+       -Note:
+       If the backend handle program execution success, you should return the JSON format result. And the fileServer will judge whether clean（rollback）the upload file or remove file base on the JSON format result.
+       Success: {code:0, msg:'custom by yourself'}
+       Failed: {code:-1, msg:'custom by yourself'}
+       you should catch the Error, And return Failed JSON format result.
