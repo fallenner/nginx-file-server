@@ -10,7 +10,7 @@ unzip -o packages.zip && rpm -Uvh ./packages/*.rpm --nodeps --force;
 
 echo "---- 系统依赖开发包安装完毕 ------"
 
-echo "---- 安装luaJIT--------"
+echo "---- 安装luaJIT------F--"
 
 unzip -o LuaJIT.zip && cd LuaJIT/;
 make && make install;
@@ -33,8 +33,12 @@ echo "---- nginx成功编译成功，安装位置在/usr/local/nginx";
 
 echo "---- 开始覆盖nginx的配置文件-------"
 cd ..;
+if [ -d "/usr/local/nginx/lua" ];then
+   rm -rf /usr/local/nginx/lua_bak;
+   mv -f /usr/local/nginx/lua /usr/local/nginx/lua_bak;
+fi
 mv -f  lua/ /usr/local/nginx/;
-mv -f nginx.conf /usr/local/nginx/;
+mv -f nginx.conf /usr/local/nginx/conf;
 echo "---- 覆盖nginx的配置文件成功-------"
 
 #创建全局可用的nginx命令
@@ -48,10 +52,10 @@ mkdir /usr/tmp/ngx_store;
 mkdir /usr/tmp/upload_temp;
 
 #新建文件服务器仓库
-if [ ! -d "/opt/uploadStore/" ];then
-mkdir /opt/uploadStore;
+if [ ! -d "/home/uploadStore/" ];then
+mkdir /home/uploadStore;
 fi
-mv 1.jpg /opt/uploadStore;
+mv 1.jpg /home/uploadStore;
 
 echo "-----开始安装转码软件ffmpeg------"
 
@@ -63,14 +67,14 @@ ln -s /opt/ffmpeg/ffmpeg /usr/bin/ffmpeg;
 
 echo "-----转码软件ffmpeg安装成功------"
 
+echo "----正在启动文件服务器"
+nginx;
+echo "----文件服务器启动成功。默认开放端口为8090。测试文件路径为http://ip:8090/1.jpg"
+
 echo "----正在开放8090端口"
 firewall-cmd --zone=public --add-port=8090/tcp --permanent;
 systemctl restart firewalld.service;
-
-echo "----正在启动文件服务器"
-nginx;
-
-echo "---- nginx启动成功，默认开放端口为8090。测试文件路径为http://ip:8090/1.jpg-------"
+echo "---- 8090端口开放成功-------"
 
 
 
