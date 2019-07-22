@@ -70,7 +70,6 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
             | callback | String |  false   | Define a backend Handle API path, it will trriger a http request after remove file finish. | http://backend/a/b/ |
 
 -   BackEnd
-
     1. upload
 
         - Params
@@ -85,8 +84,8 @@ This is a file-server base on nginx-upload-module、nginx-lua-module、lua、res
     2. remove - Params
        backend handle program will receive these params after fileServer trriger a http request.
        remove API will receive some custom params.
-       -Note:
-       If the backend handle program execution success, you should return the JSON format result. And the fileServer will judge whether clean（rollback）the upload file or remove file base on the JSON format result.
-       Success: {code:0, msg:'custom by yourself'}
-       Failed: {code:-1, msg:'custom by yourself'}
-       you should catch the Error, And return Failed JSON format result.
+-   Note  
+&ensp;&ensp;&ensp;If the backend handle program execution success, you should return the JSON format result. And the fileServer will judge whether clean（rollback）the upload file or remove file base on the JSON format result.  
+&ensp;&ensp;&ensp;Success: {code:0, msg:'custom by yourself'}  
+&ensp;&ensp;&ensp;Failed: {code:-1, msg:'custom by yourself'}  
+&ensp;&ensp;&ensp;you should catch the Error, And return Failed JSON format result.
